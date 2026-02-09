@@ -2,25 +2,31 @@ package config
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func NewS3Client() (*s3.Client, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion("us-east-1"),
-		config.WithEndpointResolver(aws.EndpointResolverFunc(
-			func(service, region string) (aws.Endpoint, error) {
-				return aws.Endpoint{
-					URL:           "http://localhost:4566",
-					SigningRegion: "us-east-1",
-				}, nil
-			})))
+		config.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider("test", "test", ""),
+		),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return s3.NewFromConfig(cfg), nil
+	endpointURL, _ := url.Parse("http://localhost:4566")
+
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(endpointURL.String())
+		o.UsePathStyle = true
+	})
+
+	return client, nil
 }
