@@ -26,7 +26,7 @@ func main() {
 	userRepo := data.NewUserRepository(db)
 	s3Repo := data.NewS3Repository(s3Client)
 
-	userHandler := handlers.NewUserHandler(userRepo)
+	userHandler := handlers.NewUserHandler(userRepo, s3Repo)
 	s3Handler := handlers.NewS3Handler(s3Repo)
 
 	r := gin.Default()

@@ -10,11 +10,12 @@ import (
 )
 
 type UserHandler struct {
-	repo *data.UserRepository
+	userRepo *data.UserRepository
+	s3Repo   *data.S3Repository
 }
 
-func NewUserHandler(repo *data.UserRepository) *UserHandler {
-	return &UserHandler{repo: repo}
+func NewUserHandler(userRepo *data.UserRepository, s3Repo *data.S3Repository) *UserHandler {
+	return &UserHandler{userRepo: userRepo, s3Repo: s3Repo}
 }
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
@@ -27,13 +28,23 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	if req.Name == "" || req.BucketName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name and bucket_name are required"})
+		return
+	}
+
 	user := &models.User{
 		Name:       req.Name,
 		BucketName: req.BucketName,
 	}
 
-	if err := h.repo.CreateUser(user); err != nil {
+	if err := h.userRepo.CreateUser(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.s3Repo.CreateBucket(req.BucketName); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create bucket"})
 		return
 	}
 
@@ -48,7 +59,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.repo.GetUser(uint(id))
+	user, err := h.userRepo.GetUser(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
