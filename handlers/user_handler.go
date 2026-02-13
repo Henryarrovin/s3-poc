@@ -2,19 +2,19 @@ package handlers
 
 import (
 	"net/http"
-	"s3-poc/data"
 	"s3-poc/models"
+	"s3-poc/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
-	repo *data.UserRepository
+	service *services.UserService
 }
 
-func NewUserHandler(repo *data.UserRepository) *UserHandler {
-	return &UserHandler{repo: repo}
+func NewUserHandler(service *services.UserService) *UserHandler {
+	return &UserHandler{service: service}
 }
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
@@ -22,6 +22,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		Name       string `json:"name"`
 		BucketName string `json:"bucket_name"`
 	}
+
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -32,7 +33,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		BucketName: req.BucketName,
 	}
 
-	if err := h.repo.CreateUser(user); err != nil {
+	if err := h.service.CreateUser(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -48,7 +49,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.repo.GetUser(uint(id))
+	user, err := h.service.GetUser(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return

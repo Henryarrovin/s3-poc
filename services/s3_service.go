@@ -1,33 +1,23 @@
 package services
 
 import (
-	"context"
+	"s3-poc/data"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type S3Service struct {
-	client *s3.Client
+	repo *data.S3Repository
 }
 
-func NewS3Service(client *s3.Client) *S3Service {
-	return &S3Service{client: client}
+func NewS3Service(repo *data.S3Repository) *S3Service {
+	return &S3Service{repo: repo}
 }
 
-func (s *S3Service) CreateBucket(bucketName string) error {
-	_, err := s.client.CreateBucket(context.TODO(), &s3.CreateBucketInput{
-		Bucket: &bucketName,
-	})
-	return err
+func (s *S3Service) CreateBucket(name string) error {
+	return s.repo.CreateBucket(name)
 }
 
-func (s *S3Service) ListObjects(bucketName string) ([]types.Object, error) {
-	out, err := s.client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-		Bucket: &bucketName,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return out.Contents, nil
+func (s *S3Service) ListObjects(name string) ([]types.Object, error) {
+	return s.repo.ListObjects(name)
 }
